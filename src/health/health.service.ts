@@ -1,47 +1,24 @@
-import { Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { HealthCheckService, HttpHealthIndicator } from '@nestjs/terminus';
 
-const endpoints = [
-  {
-    url: 'https://gitlab.com',
-    priority: 4,
-    name: 'gitlab', // Support logging
-  },
-  {
-    url: 'https://google.com.vn',
-    priority: 1,
-    name: 'google', // Support logging
-  },
-];
-
 // const endpoints = [
-//   {
-//     url: 'https://does-not-work.perfume.new',
-//     priority: 1,
-//     name: 'does-not-work', // Support logging
-//   },
-//   {
-//     url: 'https://offline.scentronix.com',
-//     priority: 2,
-//     name: 'offline', // Support logging
-//   },
-// ];
-
-// const endpoints = [
-//   {
-//     url: 'https://does-not-work.perfume.new',
-//     priority: 1,
-//     name: 'does-not-work', // Support logging
-//   },
 //   {
 //     url: 'https://gitlab.com',
 //     priority: 4,
 //     name: 'gitlab', // Support logging
 //   },
 //   {
-//     url: 'http://app.scnt.me',
-//     priority: 3,
-//     name: 'app-scnt', // Support logging
+//     url: 'https://google.com.vn',
+//     priority: 1,
+//     name: 'google', // Support logging
+//   },
+// ];
+
+// const endpoints = [
+//   {
+//     url: 'https://does-not-work.perfume.new',
+//     priority: 1,
+//     name: 'does-not-work', // Support logging
 //   },
 //   {
 //     url: 'https://offline.scentronix.com',
@@ -49,6 +26,29 @@ const endpoints = [
 //     name: 'offline', // Support logging
 //   },
 // ];
+
+const endpoints = [
+  {
+    url: 'https://does-not-work.perfume.new',
+    priority: 1,
+    name: 'does-not-work', // Support logging
+  },
+  {
+    url: 'https://gitlab.com',
+    priority: 4,
+    name: 'gitlab', // Support logging
+  },
+  {
+    url: 'http://app.scnt.me',
+    priority: 3,
+    name: 'app-scnt', // Support logging
+  },
+  {
+    url: 'https://offline.scentronix.com',
+    priority: 2,
+    name: 'offline', // Support logging
+  },
+];
 
 @Injectable()
 export class HealthService {
@@ -60,9 +60,14 @@ export class HealthService {
   async findServer() {
     const checks = await endpoints.map(
       (endpoint) => () =>
-        this.http.pingCheck(endpoint.name, endpoint.url, {
-          timeout: 5000,
-        }),
+        this.http.responseCheck(
+          endpoint.name,
+          endpoint.url,
+          (res) => res.status >= 200 && res.status <= 299,
+          {
+            timeout: 5000,
+          },
+        ),
     );
 
     try {
@@ -91,6 +96,9 @@ export class HealthService {
   }
 
   getHighestPriorityLiveEndpoint(liveEndpoints: any[]) {
+    if (liveEndpoints.length === 0) {
+      throw new HttpException('All servers are down', HttpStatus.BAD_GATEWAY);
+    }
     const sortedEndpoints = liveEndpoints.sort((a, b) => {
       if (a.priority < b.priority) {
         return -1;
@@ -109,7 +117,7 @@ export class HealthService {
         this.http.responseCheck(
           endpoints[1].name,
           endpoints[1].url,
-          (res) => res.status === 204,
+          (res) => res.status >= 200 && res.status <= 299,
           {
             timeout: 5000,
           },
