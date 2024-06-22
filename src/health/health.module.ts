@@ -5,7 +5,12 @@ import { HttpModule } from '@nestjs/axios';
 import { HealthService } from './health.service';
 
 @Module({
-  imports: [TerminusModule, HttpModule],
+  imports: [
+    TerminusModule.forRoot({
+      logger: false,
+    }),
+    HttpModule,
+  ],
   controllers: [HealthController],
   providers: [HealthService],
 })

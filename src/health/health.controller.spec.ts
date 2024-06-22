@@ -16,4 +16,13 @@ describe('HealthController', () => {
   it('should be defined', () => {
     expect(controller).toBeDefined();
   });
+
+  it('should get highest priority live server', async () => {
+    const result = await controller.findServer();
+    expect(result).toEqual({
+      url: 'http://app.scnt.me',
+      priority: 3,
+      name: 'app-scnt',
+    });
+  });
 });
