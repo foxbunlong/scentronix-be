@@ -11,9 +11,4 @@ export class HealthController {
   async findServer() {
     return this.healthService.findServer();
   }
-
-  @Get('check')
-  checkResponse() {
-    return this.healthService.checkResponse();
-  }
 }

@@ -58,7 +58,12 @@ export class HealthService {
   ) {}
 
   async findServer() {
-    const checks = await endpoints.map(
+    const liveEndpoints = await this.getLiveEndpoints(endpoints);
+    return this.getHighestPriorityLiveEndpoint(liveEndpoints);
+  }
+
+  async getLiveEndpoints(_endpoints: any[]) {
+    const checks = _endpoints.map(
       (endpoint) => () =>
         this.http.responseCheck(
           endpoint.name,
@@ -74,25 +79,22 @@ export class HealthService {
       const checkResponse = await this.health.check(checks);
       if (checkResponse.status === 'ok') {
         const liveEndpoints = [];
-        endpoints.forEach((endpoint) => {
+        _endpoints.forEach((endpoint) => {
           if (checkResponse.details[endpoint.name].status === 'up') {
             liveEndpoints.push(endpoint);
           }
         });
-        return this.getHighestPriorityLiveEndpoint(liveEndpoints);
+        return liveEndpoints;
       }
     } catch (error) {
       const liveEndpoints = [];
-      endpoints.forEach((endpoint) => {
+      _endpoints.forEach((endpoint) => {
         if (error.response.details[endpoint.name].status === 'up') {
           liveEndpoints.push(endpoint);
         }
       });
-      return this.getHighestPriorityLiveEndpoint(liveEndpoints);
+      return liveEndpoints;
     }
-
-    // Cannot be reached
-    return 'This response cannot be reached';
   }
 
   getHighestPriorityLiveEndpoint(liveEndpoints: any[]) {
@@ -109,19 +111,5 @@ export class HealthService {
       return 0;
     });
     return sortedEndpoints[0];
-  }
-
-  checkResponse() {
-    return this.health.check([
-      () =>
-        this.http.responseCheck(
-          endpoints[1].name,
-          endpoints[1].url,
-          (res) => res.status >= 200 && res.status <= 299,
-          {
-            timeout: 5000,
-          },
-        ),
-    ]);
   }
 }
